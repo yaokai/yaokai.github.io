@@ -16,7 +16,7 @@ Reactive Extensions (Rx) 是一系列接口和方法，为开发者提供了一�
 <meta property="og:site_name" content="kk">
 <meta property="og:description" content="感觉RxJava最近风生水起，不学习一下都不好意思了，洒家也是初学RxJava，也是感觉代码好像更复杂更难懂了，看了一篇外文感同身受，简单翻译一下。本文简单介绍使用RxJava优势所在。但可能需要有一点RxJava基础，推荐先看一下抛物线的那篇经典的匠心写作。—–华丽分割线，译文开始———
 Reactive Extensions (Rx) 是一系列接口和方法，为开发者提供了一种易懂且迅速简单易维护">
-<meta property="og:updated_time" content="2016-12-21T06:28:07.000Z">
+<meta property="og:updated_time" content="2016-12-21T07:20:44.000Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="kk">
 <meta name="twitter:description" content="感觉RxJava最近风生水起，不学习一下都不好意思了，洒家也是初学RxJava，也是感觉代码好像更复杂更难懂了，看了一篇外文感同身受，简单翻译一下。本文简单介绍使用RxJava优势所在。但可能需要有一点RxJava基础，推荐先看一下抛物线的那篇经典的匠心写作。—–华丽分割线，译文开始———
@@ -138,8 +138,10 @@ Reactive Extensions (Rx) 是一系列接口和方法，为开发者提供了一�
       
         <p>感觉RxJava最近风生水起，不学习一下都不好意思了，洒家也是初学RxJava，也是感觉代码好像更复杂更难懂了，看了一篇外文感同身受，简单翻译一下。本文简单介绍使用RxJava优势所在。但可能需要有一点RxJava基础，推荐先看一下抛物线的那篇经典的匠心写作。<br>—–华丽分割线，译文开始———</p>
 <p>Reactive Extensions (Rx) 是一系列接口和方法，为开发者提供了一种易懂且迅速简单易维护的方法。RxJava就是干这事儿的，提供一系列tools来帮你写出简洁的代码。<br>老实说，一开始我认为RxJava 写的代码理解起来很困难，并且引入一个库，单单就是为了用用这种新式的api，这困扰到了我。后来，我懂了。以传统的编码方式，随着app的发展，我需要重构代码、一遍一遍的重复样板代码，以满足用户不断变更的新需求，这让我苦不堪言。<br>我做的大量工作，其实是改写相关方法和接口，就是因为需求的变更（这是开发与产品间那些血案的原罪）或者需要改变展示的信息亦或是需要改变处理信息数据..这很抓狂。另外，这种代码让其他来维护的人来理解，通常是很耗时的。<br>举个栗子:我们需要从数据库获取一组用户的链表数据，并展示出来。我们可以用AsyncTask后台查询数据库，获得的结果给Ui的适配器展示出来。简单示例代码：</p>
-<p>public class SampleTask extends AsyncTask<void,void,list<users>&gt; {<br>    private final SampleAdapter mAdapter;</void,void,list<users></p>
-<pre><code>public SampleTask(SampleAdapter sampleAdapter) {
+<pre><code>public class SampleTask extends AsyncTask&lt;Void,Void,List&lt;Users&gt;&gt; {
+private final SampleAdapter mAdapter;
+
+public SampleTask(SampleAdapter sampleAdapter) {
     mAdapter = sampleAdapater;
 }
 
@@ -165,23 +167,77 @@ protected void onPostExecute(List&lt;Users&gt; users) {
     mAdapter.notifyDataSetChanged();
 }
 </code></pre><p>}<br>现在有个新需求，要求只显示非guest的user，我们处理的方法是，在添加到adapter前加个条件判断是不是guset，或者改变数据库查询的条件。更有甚者，你又被要求从数据库中获取另外的其他信息，跟user一并在这个adapter中显示出来呢？<br>这就是我们为什么要用RxJava了，把我们从这个泥潭中拉出来。换个姿势，我们Rx代码是这样子（假设您已学习过Rx基础用法）：</p>
-<p>public Observable<list<user>&gt; fetchUsersFromDatabase() {<br>    return Observable.create(new Observable.OnSubscribe<list<user>(){<br>        @Override<br>        public void call(Subscriber&lt;? super List<user>&gt; subscriber){<br>            // Fetch information from database<br>            subscriber.onNext(getUserList());<br>            subscriber.onCompleted();<br>        }<br>    });<br>}<br>像这样被调用：</user></list<user></list<user></p>
-<p>fetchUsersFromDatabase()<br>.subscribeOn(Schedulers.io())<br>//will process everything in a new thread<br>.observeOn(AndroidSchedulers.mainThread())<br>//will listen the results on the main thread<br>.subscribe(new Subscriber<list<user>&gt;() {<br>           @Override<br>            public void onCompleted() {<br>            }<br>            @Override<br>            public void onError(Throwable e) {<br>            }<br>            @Override<br>            public void onNext(List<user> users) {<br>                //Do whatever you want with each user<br>            }<br>        });<br>开始改需求了哈<br>怎么不显示guests呢，RxJava分分钟过滤掉这种不速之客：</user></list<user></p>
-<p>fetchUsersFromDatabase()<br>        .filter(new Func1<user, boolean="">() {<br>            @Override<br>            public Boolean call(User user) {<br>                //only return the users which are not guests<br>                return !user.isGuest();<br>            }<br>        })<br>        .subscribeOn(Schedulers.io())<br>        .observeOn(AndroidSchedulers.mainThread())<br>        .subscribe(new Subscriber<user>() {<br>                       @Override<br>                       public void onCompleted() {<br>                       }</user></user,></p>
-<pre><code>               @Override
-               public void onError(Throwable e) {
-                   /*Check if there was any error while retrieving from database*/
-               }
+<pre><code>public Observable&lt;List&lt;User&gt;&gt; fetchUsersFromDatabase() {
+return Observable.create(new Observable.OnSubscribe&lt;List&lt;User&gt;(){
+    @Override
+    public void call(Subscriber&lt;? super List&lt;User&gt;&gt; subscriber){
+        // Fetch information from database
+        subscriber.onNext(getUserList());
+        subscriber.onCompleted();
+    }
+});}像这样被调用：
+fetchUsersFromDatabase()
+.subscribeOn(Schedulers.io())
+//will process everything in a new thread
+.observeOn(AndroidSchedulers.mainThread())
+//will listen the results on the main thread
+.subscribe(new Subscriber&lt;List&lt;User&gt;&gt;() {
+       @Override
+        public void onCompleted() {
+        }
+        @Override
+        public void onError(Throwable e) {
+        }
+        @Override
+        public void onNext(List&lt;User&gt; users) {
+            //Do whatever you want with each user
+        }
+    });
+</code></pre><p>开始改需求了哈<br>怎么不显示guests呢，RxJava分分钟过滤掉这种不速之客：</p>
+<pre><code>fetchUsersFromDatabase()
+    .filter(new Func1&lt;User, Boolean&gt;() {
+        @Override
+        public Boolean call(User user) {
+            //only return the users which are not guests
+            return !user.isGuest();
+        }
+    })
+    .subscribeOn(Schedulers.io())
+    .observeOn(AndroidSchedulers.mainThread())
+    .subscribe(new Subscriber&lt;User&gt;() {
+                   @Override
+                   public void onCompleted() {
+                   }
+                   @Override
+                   public void onError(Throwable e) {
+                       /*Check if there was any error while retrieving from database*/
+                   }
 
-               @Override
-               public void onNext(User user) {
-                   //Do whatever you want with each user
+                   @Override
+                   public void onNext(User user) {
+                       //Do whatever you want with each user
+                   }
                }
-           }
-);
+    );
 </code></pre><p>传统的方式，即便是个简单的变更，为了保持优雅的接口化编程，我们也得创建新接口，重构代码来实现过滤。但是使用RxJava让这一切变得优雅了，我们只需要一个被观察者用来获取所有的信息，让后你就可以尽情的用这些方法来过滤获取你想要的数据。<br>可能你又会说了，ok，这是很好很易读的结构，但是这似乎使代码量变多了呢。well you are right，但是这就是Retrolambda闪耀的时候了，这个库为我们兼容了以使用java8 lambda表达式，方法引用等等。<br>帮我们简化代码如下：</p>
-<p>fetchUsersFromDatabase()<br>        .subscribeOn(Schedulers.io())<br>        .observeOn(AndroidSchedulers.mainThread())<br>        .subscribe(value -&gt; {<br>                    //Do whatever with the value<br>                },error -&gt; {<br>                    //do something with in case of error<br>                }<br>        );<br>这个问题完美搞定，然后你又开始问了，我需要增加另外的查询结果和user一同显示在这个adapter中怎么破。这真不是事儿：</p>
-<p>fetchUsersFromDatabase()<br>        .zipWith(fetchSomethingElseFromDatabase(), (users, somethingElse) -&gt; {<br>            /<em>here combine users and something else into a new object</em>/<br>        })<br>        .subscribe( o -&gt; {<br>            /<em>use the combine object from users and something else to fill the adapter </em>/<br>});<br>如上，我们可以轻松组合数据库查出来的其他数据和users给一个adapter一同显示。是不是更易维护，代码少，易读，清晰？<br>如果要更深入的学习RXJava可以看下面这篇文章，我看后受益匪浅。</p>
+<pre><code>fetchUsersFromDatabase()
+    .subscribeOn(Schedulers.io())
+    .observeOn(AndroidSchedulers.mainThread())
+    .subscribe(value -&gt; {
+                //Do whatever with the value
+            },error -&gt; {
+                //do something with in case of error
+            }
+    );
+</code></pre><p>这个问题完美搞定，然后你又开始问了，我需要增加另外的查询结果和user一同显示在这个adapter中怎么破。这真不是事儿：</p>
+<pre><code>fetchUsersFromDatabase()
+    .zipWith(fetchSomethingElseFromDatabase(), (users, somethingElse) -&gt; {
+        /*here combine users and something else into a new object*/
+    })
+    .subscribe( o -&gt; {
+        /*use the combine object from users and something else to fill the adapter */
+        });
+</code></pre><p>如上，我们可以轻松组合数据库查出来的其他数据和users给一个adapter一同显示。是不是更易维护，代码少，易读，清晰？<br>如果要更深入的学习RXJava可以看下面这篇文章，我看后受益匪浅。<br>Party tricks with RxJava, RxAndroid &amp; Retrolambda<br>另外，这篇教程 tutorial 也帮我在RxJava路上进阶了很多。</p>
 <p>文／微凉一季（简书作者）<br>原文链接：<a href="http://www.jianshu.com/p/3a4fb0cf6533" target="_blank" rel="external">http://www.jianshu.com/p/3a4fb0cf6533</a><br>著作权归作者所有，转载请联系作者获得授权，并标注“简书作者”。</p>
 
       
@@ -189,7 +245,7 @@ protected void onPostExecute(List&lt;Users&gt; users) {
     <div class="article-info article-info-index">
       
       <a href="/2016/12/21/我们为什么要在Android中使用RxJava/" class="archive-article-date">
-  	<time datetime="2016-12-21T06:24:17.000Z" itemprop="datePublished"><i class="icon-clock"></i>2016-12-21</time>
+  	<time datetime="2016-12-21T07:14:35.000Z" itemprop="datePublished"><i class="icon-clock"></i>2016-12-21</time>
 </a>
       
       
